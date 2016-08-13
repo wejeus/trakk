@@ -56,23 +56,23 @@ def dispatch(command, params):
             init(params)
         # locals()[command](params)
 
-parser = argparse.ArgumentParser(description='Backup and tracking of files using inode linking (hard links) and version control (git).')
+parser = argparse.ArgumentParser(description='Backup and tracking of files using inode linking (hard links) and version control (git)')
 
 # Creation (defaults to current directory)
-parser.add_argument('--init', type=str, action='store', help='Create and init new repo at location <path>.')
-parser.add_argument('--clone', type=str, action='store', help='Create new local repository from existing. Needs url.')
+parser.add_argument('--init', type=str, action='store', help='Create and init new repo at location <path>')
+parser.add_argument('--clone', type=str, action='store', help='Create new local repository from existing. Needs url')
 
 # Atomic commands, no argument needed
 parser.add_argument('--version', action='version', version="{0} version {1}".format(config.APP, config.VERSION))
 parser.add_argument('--list', action='store_true', help='Print list of tracked files')
-parser.add_argument('--status', action='store_true', help='Resolve pathspecs. Resolving pathspecs mean listing inconsistencies between originals and symlinks. That is potentiall broken links and/or missing files or files detected in track dir but is added as watched filed (missing in config)')
-parser.add_argument('--sync', action='store_true', help='synchronize potentially broken links')
+parser.add_argument('--status', action='store_true', help='Show any inconsistencies between original system files and mirror files and folders')
+parser.add_argument('--sync', action='store_true', help='Synchronize potentially broken links and/or missing files or files detected in track dir but is added as watched filed (missing in config)')
 
 # Handling, modifier commands (needs one or more arguments)
 # maybe remove dest
-parser.add_argument('--add', type=str, dest='add', nargs='+', help='stage pathspec(s) to be included in tracking', metavar="<pathspec>")
-parser.add_argument('--remove', type=str, dest='remove', nargs='+', help='remove pathspec(s) from being tracked', metavar="<pathspec>")
-parser.add_argument('--restore', type=str, dest='restore', nargs='+', help='restore pathspec(s) from git repository to working dir', metavar="<pathspec>")
+parser.add_argument('--add', type=str, dest='add', nargs='+', help='Stage pathspec(s) to be included in tracking', metavar="<pathspec>")
+parser.add_argument('--remove', type=str, dest='remove', nargs='+', help='Remove pathspec(s) from being tracked', metavar="<pathspec>")
+parser.add_argument('--restore', type=str, dest='restore', nargs='+', help='Restore pathspec(s) from git repository to working dir', metavar="<pathspec>")
 
 args = vars(parser.parse_args())
 
