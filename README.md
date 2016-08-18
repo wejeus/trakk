@@ -7,6 +7,9 @@ Backup utility that lets you keep a mirror of important files that are always in
 * Assumption: base dir is always: ~/
 * If new tracked entry masks previous entry remove previous and use more general entry
 
+# Install
+Needs GitPython: sudo easy_install gitpython
+
 # How
 
 Adding a file to trakk results in the following:
