@@ -27,6 +27,7 @@ class Base:
             self.storage.add_ref(ps.get_ref_path())  # best to save ref first if something goes wrong later
             self.linker.link(ps.get_abs_path(), ps.get_ref_path())
 
+    # TODO: removes ref and file OK but does not remove dir if now empty..
     def remove(self, params):
         pathspecs = params
         resolved = []
@@ -42,7 +43,8 @@ class Base:
             self.linker.unlink(ps.get_ref_path())
 
     def list(self, params=None):
-        for ref in self.storage.get_refs():
+        print "Tracking files:"
+        for ref in self.storage.get_index():
             print '~/' + ref
 
     def status(self, params=None):
@@ -54,7 +56,7 @@ class Base:
                 print "untracked ref: " + unknown_ref
                 err = True
 
-        for ref in self.storage.get_refs():
+        for ref in self.storage.get_index():
             system_abs_path = os.path.join(os.path.expanduser("~"), ref)
             track_abs_path = os.path.join(self.storage.get_repository(), ref)
             if not os.path.exists(system_abs_path):
@@ -89,7 +91,7 @@ class Base:
     def sync(self, params=None):
         pathspecs = []
         home = os.path.expanduser("~")
-        for ref in self.storage.get_refs():
+        for ref in self.storage.get_index():
             print ref
             pathspecs.append(pathspec.Pathspec(os.path.join(home, ref)))
 

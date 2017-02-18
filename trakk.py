@@ -27,11 +27,23 @@ def init(path):
             print e
             sys.exit(1)
 
-# def clone():
-#     # cloned_repo = repo.clone(join(rw_dir, 'to/this/path'))
-#     # assert cloned_repo.__class__ is Repo     # clone an existing repository
-#     print "NOT IMPLEMENTED YET!"
-#     sys.exit(1)
+def clone(params):
+    # cloned_repo = repo.clone(join(rw_dir, 'to/this/path'))
+    # assert cloned_repo.__class__ is Repo     # clone an existing repository
+    if (len(params) != 2):
+        print "error"
+    # TODO: parse and verify first param is path and second is URL
+    path = params[0]
+    repo_url = params[1]
+    try:
+        storage.Storage.new(path, create_index=False)
+        # store = storage.Storage()
+        # repo = git.Repo(store.get_repository())
+        git.Repo.clone_from(repo_url, path)
+    except BaseException, e:
+        print e
+        sys.exit(1)
+    sys.exit(1)
 
 def dispatch(command, params):
     if command in base.AVAILABLE_ACTIONS:
@@ -54,13 +66,15 @@ def dispatch(command, params):
     else:
         if command == 'init':
             init(params)
-        # locals()[command](params)
+        if command == 'clone':
+            clone(params)
+
 
 parser = argparse.ArgumentParser(description='Backup and tracking of files using inode linking (hard links) and version control (git)')
 
 # Creation (defaults to current directory)
 parser.add_argument('--init', type=str, action='store', help='Create and init new repo at location <path>')
-parser.add_argument('--clone', type=str, action='store', help='Create new local repository from existing. Needs url')
+parser.add_argument('--clone', type=str, action='store', nargs='+', help='Create new local repository from existing. Needs <path> and a remote <url>')
 
 # Atomic commands, no argument needed
 parser.add_argument('--version', action='version', version="{0} version {1}".format(config.APP, config.VERSION))
@@ -79,3 +93,4 @@ args = vars(parser.parse_args())
 for command in args:
     if args[command]:
         dispatch(command, args[command])
+
