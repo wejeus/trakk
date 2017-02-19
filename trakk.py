@@ -27,6 +27,7 @@ def init(path):
             print e
             sys.exit(1)
 
+
 def clone(params):
     # cloned_repo = repo.clone(join(rw_dir, 'to/this/path'))
     # assert cloned_repo.__class__ is Repo     # clone an existing repository
@@ -44,6 +45,7 @@ def clone(params):
         print e
         sys.exit(1)
     sys.exit(1)
+
 
 def dispatch(command, params):
     if command in base.AVAILABLE_ACTIONS:
@@ -80,6 +82,8 @@ parser.add_argument('--clone', type=str, action='store', nargs='+', help='Create
 parser.add_argument('--version', action='version', version="{0} version {1}".format(config.APP, config.VERSION))
 parser.add_argument('--list', action='store_true', help='Print list of tracked files')
 parser.add_argument('--status', action='store_true', help='Show any inconsistencies between original system files and mirror files and folders')
+parser.add_argument('--show', type=str, dest='show', nargs='+', help='Show', metavar="<pathspec>")
+
 parser.add_argument('--sync', action='store_true', help='Synchronize potentially broken links and/or missing files or files detected in track dir but is added as watched filed (missing in config)')
 
 # Handling, modifier commands (needs one or more arguments)

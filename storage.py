@@ -5,19 +5,19 @@ import exceptions
 import config
 import log
 
-# a ref is the track dir local reference, example <track dir>/.gitconfig is the ref to the real file ~/.gitconfig
+# a <ref> is pointer to a local file given by its <user_home> relative path.
+# Example: "<track dir>/.gitconfig is the ref to the real file ~/.gitconfig
 # but normalized relative to track dir. That is is the track dir is omitted and result is just .gitconfig.
 # All files are (unless defined explicitly defined in config) assumed to be relative home dir (~/)
 
 # STORAGE
-# 
-# Only concerned about handling the <rc> and <index> file located in <user home> and <repo> respectivly
 #
-# Storage consists of, and handles, a <rc> and <index>
+# Storage consists of, and handles, a <rc> and <index> file located in <user home> and <repo> respectively
 # The <rc> holds a pointer to the repo and other potential configs for Trakk in general
 # The <index> is and index if traked files and is intended to be part of the version controled files
 
 # <rc> have to look like this: {"repository": "/Users/sawe/git/isalldigital.com/system"} (using absolute paths)
+
 
 class Storage:
 

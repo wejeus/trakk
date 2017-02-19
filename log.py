@@ -2,7 +2,15 @@
 
 __DEBUG = True
 
+
 def debug(message):
     if __DEBUG:
         print "DEBUG: " + message
-        
+
+
+def error(message):
+    print "ERROR: " + message
+
+
+def info(message):
+    print message

@@ -19,7 +19,7 @@ class Pathspec:
     def get_abs_path(self):
         return self.abspath
 
-    def get_ref_path(self):
+    def get_user_rel_ref(self):
         path = self.abspath
         return os.path.relpath(path, os.path.expanduser("~"))
 
