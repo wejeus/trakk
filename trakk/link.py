@@ -48,7 +48,7 @@ class BrokenRefType:
 
     @staticmethod
     def A(ref, mine, theirs):
-        return BrokenRefType("A", "not committed to version control", ref, mine, theirs)
+        return BrokenRefType("A", "has changes not committed to version control", ref, mine, theirs)
 
     @staticmethod
     def B(ref, mine, theirs):
