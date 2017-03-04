@@ -1,8 +1,11 @@
+# author: Samuel Wejeus (samuel@isalldigital.com)
+
 import sys
 import pathspec
 import os
 import config
 import log
+import link
 
 AVAILABLE_ACTIONS = ["list", "status", "sync", "add", "remove", "restore", "show"]
 
@@ -20,7 +23,7 @@ class Base:
             try:
                 resolved.append(pathspec.Pathspec(ps))
             except Exception, e:
-                print e
+                log.error(e)
                 sys.exit(1)
 
         for ps in resolved:
@@ -35,7 +38,7 @@ class Base:
             try:
                 resolved.append(pathspec.Pathspec(ps))
             except Exception, e:
-                print e
+                log.error(e)
                 sys.exit(1)
 
         for ps in resolved:
@@ -43,13 +46,11 @@ class Base:
             self.linker.unlink(ps.get_user_rel_ref())
 
     def list(self, params=None):
-        print "Tracking files:"
+        log.info("Tracking files:")
         for ref in self.storage.get_index():
-            print '~/' + ref
+            log.info('~/' + ref)
 
-    def status(self, params=None):
-        print "{0} repository: {1}".format(config.APP, self.storage.get_repository())
-
+    def get_broken_refs(self):
         broken_refs = []
 
         # Handle cases tracked by INDEX
@@ -66,14 +67,21 @@ class Base:
                 if status:
                     broken_refs.append(status)
 
+        return broken_refs
+
+    def status(self, params=None):
+        log.info("{0} repository: {1}".format(config.APP, self.storage.get_repository()))
+
+        broken_refs = self.get_broken_refs()
+
         if len(broken_refs) > 0:
-            broken_refs.sort(key=lambda tup: tup[1])
-            print "Found broken refs:"
-            for err_type, reason, ref in broken_refs:
-                print "{0}: {1} (type {2})".format(reason, ref, err_type)
+            # broken_refs.sort(key=lambda tup: tup[1]) throws "instance has no attribute '__getitem__'" since no longer tuple
+            log.info("Found broken refs:")
+            for broken_ref in broken_refs:
+                log.info("{0}: {1} (type {2})".format(broken_ref.reason, broken_ref.ref, broken_ref.type))
             return True
         else:
-            print "All OK"
+            log.info("All OK")
 
         return False
 
@@ -81,7 +89,7 @@ class Base:
         if ref.startswith('.git/'):
             return None
         if not self.storage.contains_ref(ref):
-            return "F", "untracked file", ref
+            return link.BrokenRefType.F(ref)
         return None
 
     def determine_link_status(self, ref):
@@ -91,22 +99,23 @@ class Base:
         # Case C, E
         if not os.path.exists(L):
             if os.path.exists(R):
-                return "C", "ref does not exist in repository but is present in system", ref
+                return link.BrokenRefType.C(ref, L, R)
             else:
-                return "E", "ref does not exist in either repository OR system", ref
+                return link.BrokenRefType.E(ref, L, R)
         # Case A, B, D (L do exist)
         else:
             # Case D
             if not os.path.exists(R):
-                return "D", "new (non existing) upstream ref", ref
+                return link.BrokenRefType.D(ref, L, R)
             # Case A, B (R do exist)
             else:
                 if os.path.samefile(R, L):
                     # L, R points to same inode, link is OK but could still diff from what is in git db
                     if self.git_repo.head.commit.diff(None, paths=ref):
-                        return "A", "not committed to version control", ref
+                        return link.BrokenRefType.A(ref, L, R)
                 else:
-                    return "B", "inode mismatch for ref", ref
+                    return link.BrokenRefType.B(ref, L, R)
+
         return None
 
     # diff for cases A, B
@@ -116,7 +125,7 @@ class Base:
             sys.exit(1)
 
         ref = params[0]
-        log.debug("deteremine show for: " + ref)
+        log.debug("determine show for: " + ref)
 
         status = self.determine_untracked_status(ref)
 
@@ -124,23 +133,18 @@ class Base:
             status = self.determine_link_status(ref)
 
         if status:
-            err_type, reason, ref = status
-
-            R = os.path.join(os.path.expanduser("~"), ref)
-            L = os.path.join(self.storage.get_repository(), ref)
-
-            if err_type == "A":
-                for diff in self.git_repo.head.commit.diff(None, paths=L, create_patch=True):
+            if status.type == "A":
+                for diff in self.git_repo.head.commit.diff(None, paths=status.mine, create_patch=True):
                     log.info(diff)
-            elif err_type == "B":
-                self.show_file_diff(L, R)
-            elif err_type == "C":
-                self.show_file_diff(None, R)
-            elif err_type == "D":
-                self.show_file_diff(L, None)
-            elif err_type == "E":
-                log.info(reason)
-            elif err_type == "F":
+            elif status.type == "B":
+                self.show_file_diff(status.mine, status.theirs)
+            elif status.type == "C":
+                self.show_file_diff(None, status.theirs)
+            elif status.type == "D":
+                self.show_file_diff(status.mine, None)
+            elif status.type == "E":
+                log.info(status.reason)
+            elif status.type == "F":
                 log.info("Untracked file. Nothing to show. Does not exist in neither index or system.")
             else:
                 log.error("unknown status!")
@@ -168,24 +172,38 @@ class Base:
 
     # NOTE: sync always goes from SYSTEM to REPO (by force)
     def sync(self, params=None):
-        pathspecs = []
-        home = os.path.expanduser("~")
-        for ref in self.storage.get_index():
-            print ref
-            pathspecs.append(pathspec.Pathspec(os.path.join(home, ref)))
 
-        for root, dirs, files in os.walk("/Users/wejeus/git/system"):
-            for name in files:
-                ref = os.path.join(root, name).split(self.storage.get_repository() + "/")[1]
-                if ref.startswith('.git'):
-                    continue
-                if not self.storage.contains_ref(ref):
-                    pathspecs.append(pathspec.Pathspec(os.path.join(home, ref)))
+        for broken_ref in self.get_broken_refs():
+            if broken_ref.type == "B":
+                self.sync_choose_which(broken_ref.ref, broken_ref.mine, broken_ref.theirs)
 
-        for ps in pathspecs:
-            self.linker.link(ps.get_abs_path(), ps.get_user_rel_ref())
-            if not self.storage.contains_ref(ps.get_user_rel_ref()):
-                self.storage.add_ref(ps.get_user_rel_ref())
+        # for root, dirs, files in os.walk(self.storage.get_repository()):
+        #     for name in files:
+        #         ref = os.path.join(root, name).split(self.storage.get_repository() + "/")[1]
+        #         if ref.startswith('.git'):
+        #             continue
+        #         if not self.storage.contains_ref(ref):
+        #             pathspecs.append(pathspec.Pathspec(os.path.join(home, ref)))
+        #
+        # for ps in pathspecs:
+        #     self.linker.link(ps.get_abs_path(), ps.get_user_rel_ref())
+        #     if not self.storage.contains_ref(ps.get_user_rel_ref()):
+        #         self.storage.add_ref(ps.get_user_rel_ref())
+
+    def sync_choose_which(self, ref, mine, theirs):
+        sys.stdout.write("{0} pick (M)ine/(T)heirs/(S)kip: ".format(ref))
+        choice = sys.stdin.readline().rstrip().lower()
+        if choice == "s":
+            return False
+        if choice == "m":
+            link.link(mine, theirs)
+            return True
+        if choice == "t":
+            link.link(theirs, mine)
+            return True
+        else:
+            print "What?"
+            return self.sync_choose_which(ref, mine, theirs)
 
     # NOTE: restore always goes from REPO to SYSTEM (by force)
     def restore(self, params):

@@ -48,3 +48,6 @@ Restore pathspec(s) from git repository to working dir'
 # ROADMAP
 * Move ref database into repo dir. Should be transparent to normal git usage and updated and commited automatically (potential updates to origin will be detected by git)
 * When initializing new dir automatically create directory structure instead of require that it already exists
+
+BUGS
+* throws error if repo dir is non existing or .trakk.config is missing

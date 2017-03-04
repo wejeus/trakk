@@ -9,7 +9,7 @@ def debug(message):
 
 
 def error(message):
-    print "ERROR: " + message
+    print "ERROR: {0}".format(message)
 
 
 def info(message):
