@@ -16,7 +16,7 @@ class Linker:
         if self.unlink(dest):
             log.info("re:syncing link: {0}".format(src))
         else:
-            log.inof("creating new link: {0}".format(src))
+            log.info("creating new link: {0}".format(src))
         abs_dest = os.path.join(self.repository, dest)
         self.make_dirs_if_needed(abs_dest)
         os.link(src, abs_dest)

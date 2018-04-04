@@ -1,4 +1,7 @@
-TRAKK - Simple tracking and backup system
+
+TRAKK
+============
+- Simple tracking and backup system
 
 # What
 
@@ -8,7 +11,9 @@ Backup utility that lets you keep a mirror of important files that are always in
 * If new tracked entry masks previous entry remove previous and use more general entry
 
 # Install
-Needs GitPython: sudo easy_install gitpython
+* brew install python3 # this will install python3 and pip3 in /usr/local/bin - make sure to update your PATH to include those. I have experienced issued with pip3 not being installed, try to clean chmod /usr/local to right permission "sudo chown -R $(whoami) $(brew --prefix)/*" and reinstall with $> brew reinstall python3 
+* pip3 install --user pipenv
+* pip3 install --user gitpython (old way: Needs GitPython: sudo easy_install gitpython)
 
 # How
 
@@ -22,10 +27,17 @@ Removing a file from trakk results in the following:
 * remove entry from list in ~/.track.config
 * remove hard link from repository dir
 
-## Basic Usage
+Usage
+--------
 
-### trakk --init <path>
+
 Create and init new repo at location <path>
+```
+trakk --init <path>
+```
+
+
+
 
 ### trakk --list
 Print list of tracked files
@@ -42,12 +54,6 @@ Stage pathspec(s) to be included in tracking
 ### trakk --remove
 Remove pathspec(s) from being tracked
 
-### trakk --restore
-Restore pathspec(s) from git repository to working dir'
-
-# ROADMAP
-* Move ref database into repo dir. Should be transparent to normal git usage and updated and commited automatically (potential updates to origin will be detected by git)
-* When initializing new dir automatically create directory structure instead of require that it already exists
-
-BUGS
-* throws error if repo dir is non existing or .trakk.config is missing
+References
+--------
+* http://docs.python-guide.org/en/latest/dev/virtualenvs/
