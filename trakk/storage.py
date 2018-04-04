@@ -1,7 +1,6 @@
 # author: Samuel Wejeus (samuel@isalldigital.com)
 import os
 import json
-import exceptions
 import config
 import log
 

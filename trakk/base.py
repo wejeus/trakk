@@ -22,7 +22,7 @@ class Base:
         for ps in pathspecs:
             try:
                 resolved.append(pathspec.Pathspec(ps))
-            except Exception, e:
+            except Exception as e:
                 log.error(e)
                 sys.exit(1)
 
@@ -37,7 +37,7 @@ class Base:
         for ps in pathspecs:
             try:
                 resolved.append(pathspec.Pathspec(ps))
-            except Exception, e:
+            except Exception as e:
                 log.error(e)
                 sys.exit(1)
 
@@ -202,7 +202,7 @@ class Base:
             link.link(theirs, mine)
             return True
         else:
-            print "What?"
+            print("What?")
             return self.sync_choose_which(ref, mine, theirs)
 
     # NOTE: restore always goes from REPO to SYSTEM (by force)
@@ -217,8 +217,8 @@ class Base:
         for ps in paths:
             try:
                 pathspecs.append(pathspec.Pathspec(ps))
-            except Exception, e:
-                print e
+            except Exception as e:
+                print(e)
                 sys.exit(1)
 
         for ps in pathspecs:
@@ -226,7 +226,7 @@ class Base:
             track_ref_path = ps.get_user_rel_ref()
             track_abs_path = os.path.join(self.storage.get_repository(), track_ref_path)
             if not self.storage.contains_ref(ps.get_user_rel_ref()):
-                print "File not tracked (use --add <pathspec> to start tracking): {0}".format(ps.get_abs_path())
+                print("File not tracked (use --add <pathspec> to start tracking): {0}".format(ps.get_abs_path()))
                 sys.exit(1)
             # inode mismatch, restore by linking in opposite direction
             if not os.path.samefile(system_abs_path, track_abs_path):

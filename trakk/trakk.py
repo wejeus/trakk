@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python3
 # author: Samuel Wejeus (samuel@isalldigital.com)
 import sys
 import argparse
@@ -18,14 +18,14 @@ def init(path):
         repo = git.Repo(ref_store.get_repository())
         log.info("Repository already exists at location: " + ref_store.get_repository())
         sys.exit(0)
-    except Exception, e:
+    except Exception as e:
         try:
             storage.Storage.new(path)
             ref_store = storage.Storage() # read back to as a test if all is OK
             assert git.Repo.init(os.path.abspath(path)).__class__ is git.Repo
             log.info("Initialized empty {0} repository in {1}".format(config.APP, ref_store.get_repository()))
-        except BaseException, e:
-            print e
+        except BaseException as e:
+            print(e)
             sys.exit(1)
 
 
@@ -42,7 +42,7 @@ def clone(params):
         # store = storage.Storage()
         # repo = git.Repo(store.get_repository())
         git.Repo.clone_from(repo_url, path)
-    except BaseException, e:
+    except BaseException as e:
         log.error(e)
         sys.exit(1)
     sys.exit(1)
@@ -62,7 +62,7 @@ def dispatch(command, params):
 
             method = getattr(trakk, command)
             method(params)
-        except BaseException, e:
+        except BaseException as e:
             log.error(e)
             sys.exit(1)
 

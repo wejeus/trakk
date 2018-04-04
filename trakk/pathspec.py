@@ -1,6 +1,5 @@
 # author: Samuel Wejeus (samuel@isalldigital.com)
 import os
-import exceptions
 
 # A pathspec is a path
 # A pathspec convenience wrapper class for file paths.
