@@ -20,6 +20,8 @@ def init(path):
 	except IOError as e:
 		try:
 			ref_store = RefStore.new(path)
+			if not ref_store:
+				return
 			assert git.Repo.init(os.path.abspath(path)).__class__ is git.Repo
 			log.info("Initialized empty {0} repository in {1}".format(config.APP, ref_store.get_repository()))	
 		except BaseException as e:

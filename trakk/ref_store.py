@@ -3,6 +3,7 @@ import os
 import json
 import config
 import log
+from distutils.util import strtobool
 
 # a <ref> is pointer to a local file given by its <user_home> relative path.
 # Example: "<track dir>/.gitconfig is the ref to the real file ~/.gitconfig
@@ -25,6 +26,7 @@ _ERROR_NOT_INITIALIZED = "Trakk not yet initialized!"
 _ERROR_NOT_TRACKED = "File not tracked"
 _ERROR_ALREADY_TRACKED = "File already tracked"
 _ERROR_REPOSITORY_NOT_EMPTY = "Specified repository path is not empty and/or already exists"
+_ERROR_INITIALAZION_ABORTED = "Initialization aborted"
 
 # returns valid (repository) or empty
 def read_rc():
@@ -89,6 +91,7 @@ class RefStore:
     def new(self, path):
         log.debug("setting up new RefStore..")
         repo_abs_path = os.path.abspath(path)
+        ok = True
 
         if not os.path.exists(repo_abs_path):
             log.debug("creating missing directories..")
@@ -98,10 +101,16 @@ class RefStore:
             raise IOError(_ERROR_INVALID_REPOSITORY_PATH)
 
         if not _is_repo_dir_empty(repo_abs_path):
-            raise IOError(_ERROR_REPOSITORY_NOT_EMPTY)
-        
-        _write_rc(repo_abs_path)
-        return RefStore()
+            log.info("Potential repository already exist at location (i.e it is not empty).\nInitialize as new trakk repository? [y/n]")
+            try:
+                ok = strtobool(input().lower())
+            except ValueError:
+                return None
+        if ok:
+            _write_rc(repo_abs_path)
+            return RefStore()
+        else:
+            return None
 
 
     def check_valid(self):
