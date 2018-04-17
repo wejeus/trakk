@@ -9,8 +9,7 @@ import link
 
 AVAILABLE_ACTIONS = ["list", "status", "sync", "add", "remove", "restore", "show"]
 
-
-class Base:
+class App:
     def __init__(self, ref_storage, linker, git_repo):
         self.storage = ref_storage
         self.linker = linker
@@ -47,7 +46,11 @@ class Base:
 
     def list(self, params=None):
         log.info("Tracking files:")
-        for ref in self.storage.get_index():
+        refs = self.storage.get_index()
+        if not refs:
+            log.info("None")
+            return
+        for ref in refs:
             log.info('~/' + ref)
 
     def get_broken_refs(self):

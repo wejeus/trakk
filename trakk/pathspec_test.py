@@ -1,15 +1,19 @@
 import unittest
-from mock import Mock
 import pathspec
+from os import path
 
-
+test_env = path.join(path.dirname(path.abspath(__file__)), "test_env")
 
 class PathspecTest(unittest.TestCase):
 
-    def test_create(self):
-        with self.assertRaises(IOError):
-            pathspec.Pathspec("/Users/sawe/git")
+	def test_CreateRef_FileDoesNotExist_ShouldThrow(self):
+		with self.assertRaises(IOError):
+			pathspec.Pathspec(test_env)
 
-#
-# if __name__ == '__main__':
-#     unittest.main()
+	def test_CreateRef_RefIsDir_ShouldThrow(self):
+		with self.assertRaises(IOError):
+			pathspec.Pathspec("~/")
+
+if __name__ == '__main__':
+	print("Using test environment: {0}".format(test_env))
+	unittest.main()

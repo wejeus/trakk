@@ -11,6 +11,7 @@ Backup utility that lets you keep a mirror of important files that are always in
 * If new tracked entry masks previous entry remove previous and use more general entry
 
 # Install
+
 * brew install python3 # this will install python3 and pip3 in /usr/local/bin - make sure to update your PATH to include those. I have experienced issued with pip3 not being installed, try to clean chmod /usr/local to right permission "sudo chown -R $(whoami) $(brew --prefix)/*" and reinstall with $> brew reinstall python3 
 * pip3 install --user pipenv
 * pip3 install --user gitpython (old way: Needs GitPython: sudo easy_install gitpython)
