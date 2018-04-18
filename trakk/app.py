@@ -26,23 +26,30 @@ class App:
                 sys.exit(1)
 
         for ps in resolved:
+            if self.storage.contains_ref(ps.get_user_rel_ref()): # and os.path.isfile(ps.get_abs_path()):
+                log.info("File already tracked")
+                return
             self.storage.add_ref(ps.get_user_rel_ref())  # best to save ref first if something goes wrong later
-            self.linker.link(ps.get_abs_path(), ps.get_user_rel_ref())
+            # self.linker.link(ps)
 
-    # TODO: removes ref and file OK but does not remove dir if now empty..
-    def remove(self, params):
-        pathspecs = params
+    # can be used to either remove a ref pointed to by path in repo dir
+    # or by pointing to original source file. Either way refs are remove
+    # and (maybe) unlinked if needed.
+    def remove(self, pathspecs):
         resolved = []
         for ps in pathspecs:
             try:
                 resolved.append(pathspec.Pathspec(ps))
             except Exception as e:
                 log.error(e)
-                sys.exit(1)
-
+                return
         for ps in resolved:
-            self.storage.remove_ref(ps.get_user_rel_ref())
-            self.linker.unlink(ps.get_user_rel_ref())
+            log.debug("Removing ref: {0}".format(ps))
+            try:
+                self.storage.remove_ref(ps)
+            except Exception as e:
+                pass
+            self.linker.unlink(ps)
 
     def list(self, params=None):
         log.info("Tracking files:")

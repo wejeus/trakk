@@ -25,12 +25,24 @@ class Pathspec:
     def get_abs_path(self):
         return self.abspath
 
+    # the ref format stored in index. Example of ref: "git/private/system/Library/.DS_Store"
     def get_user_rel_ref(self):
-        path = self.abspath
-        return os.path.relpath(path, os.path.expanduser("~"))
+        return os.path.relpath(self.abspath, os.path.expanduser("~"))
 
     def get_ref_path_dirs_only(self):
         return os.path.dirname(self.get_user_rel_ref())
 
+    # use to check if file exist in filesystem outside of repo
     def is_existing_file(self):
         return os.path.exists(self.abspath)
+
+    @staticmethod
+    def parse_ref_name(repo, pathspec):
+        assert type(pathspec) is Pathspec, _ERROR_NOT_PATHSPEC
+        user_rel_repo = repo[len(os.path.expanduser("~")):]
+        path = pathspec.get_abs_path()[len(os.path.expanduser("~")):]
+        if path.startswith(user_rel_repo):
+            path = path[len(user_rel_repo):]
+        if path.startswith("/"):
+            path = path[1:]
+        return path

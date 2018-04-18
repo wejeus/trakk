@@ -4,6 +4,7 @@ import json
 import config
 import log
 from distutils.util import strtobool
+from pathspec import Pathspec
 
 # a <ref> is pointer to a local file given by its <user_home> relative path.
 # Example: "<track dir>/.gitconfig is the ref to the real file ~/.gitconfig
@@ -12,11 +13,11 @@ from distutils.util import strtobool
 
 # RefStore
 #
-# Storage consists of, and handles, a <rc> and <index> file located in <user home> and <repo> respectively
-# The <rc> holds a pointer to the repo and other potential configs for Trakk in general
+# Storage consists of, and handles, a <repository> and <index>.
+# The <repository> holds a pointer to the repo and other potential configs for Trakk in general
 # The <index> is and index if traked files and is intended to be part of the version controled files
-
-# <rc> have to look like this: {"repository": "/Users/sawe/git/isalldigital.com/system"} (using absolute paths)
+# <rc> have to look like this: {"repository": "/Users/sawe/git/isalldigital.com/system"} (using absolute path)
+# the refs stored in <index> must be <repository> relative sub paths only since location of <repository> could change.
 
 _JSON_KEY_REPOSITORY = 'repository'
 _JSON_KEY_REFS = 'refs'
@@ -27,6 +28,7 @@ _ERROR_NOT_TRACKED = "File not tracked"
 _ERROR_ALREADY_TRACKED = "File already tracked"
 _ERROR_REPOSITORY_NOT_EMPTY = "Specified repository path is not empty and/or already exists"
 _ERROR_INITIALAZION_ABORTED = "Initialization aborted"
+_ERROR_NOT_PATHSPEC = "target must be of type Pathspec"
 
 # returns valid (repository) or empty
 def read_rc():
@@ -112,7 +114,6 @@ class RefStore:
         else:
             return None
 
-
     def check_valid(self):
         if not self.repo:
             raise IOError(_ERROR_NOT_INITIALIZED)
@@ -126,26 +127,24 @@ class RefStore:
     def add_ref(self, path):
         self.check_valid()
         if path in self.index:
-            raise exceptions.IOError(RefStore.__ERROR_ALREADY_TRACKED)
+            raise LookupError(_ERROR_ALREADY_TRACKED)
         else:
             self.index.append(path)
             self.commit()
 
     # assumes path is resolved
-    def remove_ref(self, path):
+    def remove_ref(self, pathspec):
+        assert type(pathspec) is Pathspec, _ERROR_NOT_PATHSPEC
         self.check_valid()
-        if path in self.index:
-            self.index.remove(path)
+        name = Pathspec.parse_ref_name(self.repo, pathspec)
+        if name in self.index:
+            self.index.remove(name)
             self.commit()
         else:
-            raise exceptions.IOError(RefStore.__ERROR_NOT_TRACKED)
+            raise LookupError(_ERROR_NOT_TRACKED)
 
     def contains_ref(self, path):
         self.check_valid()
-        # special case: index file itself is part of repo but should not be part of used index
-        if path == config.index_filename():
-            return True
-
         exists = False
         for ref in self.index:
             if ref == path:
@@ -160,8 +159,13 @@ class RefStore:
     def commit(self):
         self.check_valid()
         self.index.sort()
-        data = {RefStore.__JSON_KEY_REFS: self.index}
+        data = {_JSON_KEY_REPOSITORY: self.repo, _JSON_KEY_REFS: self.index}
         encoded = json.dumps(data)
-        rc = config.index(self.repo)
+        rc = config.rc()
         with open(rc, 'w') as f:
             f.write(encoded)
+
+    def is_pathspec_in_repo_dir(self, pathspec):
+        assert type(pathspec) is Pathspec
+        return pathspec.get_abs_path().startswith(self.repo)
+
