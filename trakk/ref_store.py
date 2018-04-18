@@ -124,12 +124,14 @@ class RefStore:
         return self.repo
 
     # assumes path is resolved
-    def add_ref(self, path):
+    def add_ref(self, pathspec):
+        assert type(pathspec) is Pathspec, _ERROR_NOT_PATHSPEC
         self.check_valid()
-        if path in self.index:
+        name = Pathspec.parse_ref_name(self.repo, pathspec)
+        if name in self.index:
             raise LookupError(_ERROR_ALREADY_TRACKED)
         else:
-            self.index.append(path)
+            self.index.append(name)
             self.commit()
 
     # assumes path is resolved
@@ -143,11 +145,13 @@ class RefStore:
         else:
             raise LookupError(_ERROR_NOT_TRACKED)
 
-    def contains_ref(self, path):
+    def contains_ref(self, pathspec):
+        assert type(pathspec) is Pathspec, _ERROR_NOT_PATHSPEC
         self.check_valid()
+        name = Pathspec.parse_ref_name(self.repo, pathspec)
         exists = False
         for ref in self.index:
-            if ref == path:
+            if ref == name:
                 exists = True
                 break
         return exists

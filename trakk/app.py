@@ -23,14 +23,14 @@ class App:
                 resolved.append(pathspec.Pathspec(ps))
             except Exception as e:
                 log.error(e)
-                sys.exit(1)
+                return
 
         for ps in resolved:
-            if self.storage.contains_ref(ps.get_user_rel_ref()): # and os.path.isfile(ps.get_abs_path()):
-                log.info("File already tracked")
-                return
-            self.storage.add_ref(ps.get_user_rel_ref())  # best to save ref first if something goes wrong later
-            # self.linker.link(ps)
+            if self.storage.contains_ref(ps): # and os.path.isfile(ps.get_abs_path()):
+                log.info("File already tracked: {0}".format(ps))
+                continue
+            self.storage.add_ref(ps)  # best to save ref first if something goes wrong later
+            self.linker.link(ps)
 
     # can be used to either remove a ref pointed to by path in repo dir
     # or by pointing to original source file. Either way refs are remove
