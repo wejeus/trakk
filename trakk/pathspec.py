@@ -1,5 +1,6 @@
 # author: Samuel Wejeus (samuel@isalldigital.com)
 import os
+import log
 
 # A pathspec is a path
 # A pathspec convenience wrapper class for file paths.
@@ -10,14 +11,14 @@ class Pathspec:
     def __init__(self, path):
         if path.startswith("~"):
             path = os.path.expanduser(path)
-
         abspath = os.path.abspath(path)
-
+        
         if not os.path.isfile(abspath):
             raise IOError("No such file: {0}".format(abspath))
         if not abspath.startswith(os.path.expanduser("~")):
             raise IOError("Path not located under users home (~/): {0}".format(abspath))
         self.abspath = abspath
+        log.debug("Built pathspec: {0}".format(self.abspath))
 
     def __repr__(self):
         return self.abspath

@@ -10,6 +10,8 @@ from app import App, AVAILABLE_ACTIONS
 import config
 import log
 
+_ERROR_GIT_NOT_INITIALIZED = "Could not initialize git repository"
+
 # test to see if already exists otherwise create new
 def init(path):
 	try:
@@ -52,7 +54,7 @@ def dispatch(command, params):
 		try:
 			ref_store = RefStore()
 			repo = git.Repo(ref_store.get_repository())
-			assert not repo.bare
+			assert not repo.bare, _ERROR_GIT_NOT_INITIALIZED
 
 			trakkApp = App(
 				ref_store,

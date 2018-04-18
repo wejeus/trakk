@@ -1,7 +1,7 @@
 # author: Samuel Wejeus (samuel@isalldigital.com)
 
 import sys
-import pathspec
+from pathspec import Pathspec
 import os
 import config
 import log
@@ -20,7 +20,7 @@ class App:
         resolved = []
         for ps in pathspecs:
             try:
-                resolved.append(pathspec.Pathspec(ps))
+                resolved.append(Pathspec(ps))
             except Exception as e:
                 log.error(e)
                 return
@@ -39,7 +39,7 @@ class App:
         resolved = []
         for ps in pathspecs:
             try:
-                resolved.append(pathspec.Pathspec(ps))
+                resolved.append(Pathspec(ps))
             except Exception as e:
                 log.error(e)
                 return
@@ -98,7 +98,7 @@ class App:
     def determine_untracked_status(self, ref):
         if ref.startswith('.git/'):
             return None
-        if not self.storage.contains_ref(ref):
+        if not self.storage.contains_ref(Pathspec(ref)):
             return link.BrokenRefType.F(ref)
         return None
 
@@ -134,7 +134,9 @@ class App:
             log.error("can only handle one ref at a time")
             sys.exit(1)
 
-        ref = params[0]
+        ref = Pathspec.parse_ref_name(self.storage.get_repository(), Pathspec(params[0]))
+        ref = os.path.join(self.storage.get_repository(), ref)
+
         log.debug("determine show for: " + ref)
 
         status = self.determine_untracked_status(ref)
@@ -155,7 +157,7 @@ class App:
             elif status.type == "E":
                 log.info(status.reason)
             elif status.type == "F":
-                log.info("Untracked file. Nothing to show. Does not exist in neither index or system.")
+                log.info("Untracked file. Nothing to show.")
             else:
                 log.error("unknown status!")
         else:
@@ -193,7 +195,7 @@ class App:
         #         if ref.startswith('.git'):
         #             continue
         #         if not self.storage.contains_ref(ref):
-        #             pathspecs.append(pathspec.Pathspec(os.path.join(home, ref)))
+        #             pathspecs.append(Pathspec(os.path.join(home, ref)))
         #
         # for ps in pathspecs:
         #     self.linker.link(ps.get_abs_path(), ps.get_user_rel_ref())
@@ -226,7 +228,7 @@ class App:
         pathspecs = []
         for ps in paths:
             try:
-                pathspecs.append(pathspec.Pathspec(ps))
+                pathspecs.append(Pathspec(ps))
             except Exception as e:
                 print(e)
                 sys.exit(1)
