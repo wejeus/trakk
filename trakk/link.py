@@ -9,6 +9,7 @@ from pathspec import Pathspec
 # TODO handle linking of existing files! (for sync)
 
 _ERROR_NOT_PATHSPEC = "target must be of type Pathspec"
+_ERROR_INVALID_USER_ABS_PATH = "target must be an absolute path rooted in user home dir"
 
 # Note: src and dest must be of pathspec type!
 class Linker:
@@ -16,14 +17,21 @@ class Linker:
     def __init__(self, repository):
         self.repo = repository
 
+    def link_raw(self, src, dest):
+        assert src.startswith(os.path.expanduser("~")), _ERROR_INVALID_USER_ABS_PATH
+        assert dest.startswith(os.path.expanduser("~")), _ERROR_INVALID_USER_ABS_PATH
+        # handle missing parent dirs
+        self.make_dirs_if_needed(dest)
+        os.link(src, dest)
+
     # a link requires src and destination but since we link an existing 
     # file under a new location (but with same relative path) one pathspec
     # is enough to determine linking
     def link(self, pathspec):
         assert type(pathspec) is Pathspec, _ERROR_NOT_PATHSPEC
         log.info("creating link: {0}".format(pathspec))
-        # handle empty dir
-        self.make_dirs_if_needed(pathspec)
+        # handle missing parent dirs
+        self.make_dirs_if_needed(os.path.join(self.repo, pathspec.get_user_rel_ref()))
         path_in_repo = os.path.join(self.repo, pathspec.get_user_rel_ref())
         os.link(pathspec.get_abs_path(), path_in_repo)
 
@@ -44,54 +52,46 @@ class Linker:
             wasUnlinked = False
         return wasUnlinked
 
-    def make_dirs_if_needed(self, pathspec):
-        abs_path = os.path.join(self.repo, pathspec.get_user_rel_ref())
-        dir_path = os.path.dirname(abs_path)
+    def make_dirs_if_needed(self, path):
+        assert path.startswith(os.path.expanduser("~")), _ERROR_INVALID_USER_ABS_PATH
+        dir_path = os.path.dirname(path)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
 
 
+# <mine> is what is located in your local fs, <theirs> refers to something located in <repository>
 class BrokenRefType:
 
-    def __init__(self, named_type, reason, ref, mine, theirs):
+    # TODO: migrate ref (and maybe mine/theirs) to pathspecs
+    def __init__(self, named_type, reason, mine, theirs):
         self.type = named_type
         self.reason = reason
-        self.ref = ref
         self.mine = mine
         self.theirs = theirs
 
-    @staticmethod
-    def A(ref, mine, theirs):
-        return BrokenRefType("A", "has changes not committed to version control", ref, mine, theirs)
+    def __repr__(self):
+        return "BrokenRef: type {0} mine {1} theirs {2}".format(self.type, self.mine, self.theirs)
 
     @staticmethod
-    def B(ref, mine, theirs):
-        return BrokenRefType("B", "inode mismatch for ref", ref, mine, theirs)
+    def A(mine, theirs):
+        return BrokenRefType("A", "Has changes not committed to version control", mine, theirs)
 
     @staticmethod
-    def C(ref, mine, theirs):
-        return BrokenRefType("C", "ref does not exist in repository but is present in system", ref, mine, theirs)
+    def B(mine, theirs):
+        return BrokenRefType("B", "Inode mismatch for ref", mine, theirs)
 
     @staticmethod
-    def D(ref, mine, theirs):
-        return BrokenRefType("D", "new (non existing) upstream ref", ref, mine, theirs)
+    def C(mine, theirs):
+        return BrokenRefType("C", "Ref does not exist in repository but is present in system", mine, theirs)
 
     @staticmethod
-    def E(ref, mine, theirs):
-        return BrokenRefType("E", "ref does not exist in either repository OR system", ref, mine, theirs)
+    def D(mine, theirs):
+        return BrokenRefType("D", "New incoming (non existing in system) upstream ref", mine, theirs)
 
     @staticmethod
-    def F(ref):
-        return BrokenRefType("F", "untracked file", ref, None, None)
+    def E(mine, theirs):
+        return BrokenRefType("E", "Ref does not exist in either repository OR system", mine, theirs)
 
-    # def mine(self):
-    #     return self.my_ref
-    #
-    # def theirs(self):
-    #     return self.their_ref
-    #
-    # def reason(self):
-    #     return self.reason
-    #
-    # def type(self):
-    #     return self.named_type
+    @staticmethod
+    def F(theirs):
+        return BrokenRefType("F", "Untracked file", None, theirs)

@@ -37,6 +37,9 @@ class Pathspec:
     def is_existing_file(self):
         return os.path.exists(self.abspath)
 
+    def ref_name(self, repo):
+        return self.parse_ref_name(repo, self)
+
     @staticmethod
     def parse_ref_name(repo, pathspec):
         assert type(pathspec) is Pathspec, _ERROR_NOT_PATHSPEC

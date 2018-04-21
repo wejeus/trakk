@@ -84,9 +84,10 @@ parser.add_argument('--init',
 					type=str, action='store',
 					help='Create and init new repo at location <path>')
 
-parser.add_argument('--clone',
-					type=str, action='store', nargs='+',
-					help='Create new local repository from existing. Needs <path> and a remote <url>')
+# TODO
+# parser.add_argument('--clone',
+# 					type=str, action='store', nargs='+',
+# 					help='Create new local repository from existing. Needs <path> and a remote <url>')
 
 parser.add_argument('--list',
 					action='store_true',
@@ -98,14 +99,10 @@ parser.add_argument('--status',
 
 parser.add_argument('--sync',
 					action='store_true',
-					help='Synchronize potentially broken links and/or missing files or files detected in track dir but is added as watched filed (missing in config)')
+					help='Synchronize potentially broken links and/or missing files or files detected in trakk dir but is added as watched files in git (i.e. missing in index)')
 
 # Handling, modifier commands (needs one or more arguments)
 # maybe remove dest
-
-parser.add_argument('--show',
-					type=str, dest='show', nargs='+', metavar="<pathspec>",
-					help='Show')
 
 parser.add_argument('--add',
 					type=str, dest='add', nargs='+', metavar="<pathspec>",
@@ -114,6 +111,15 @@ parser.add_argument('--add',
 parser.add_argument('--remove',
 					type=str, dest='remove', nargs='+', metavar="<pathspec>",
 					help='Remove pathspec(s) from being tracked')
+
+parser.add_argument('--show',
+					type=str, dest='show', nargs='+', metavar="<pathspec>",
+					help='Show diff for file')
+
+parser.add_argument('--restore',
+					type=str, dest='remove', nargs='+', metavar="<pathspec>",
+					help='Restore file from repository to system. This will overwrite any existing file')
+
 
 if len(sys.argv)==1:
 	try:

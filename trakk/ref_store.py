@@ -145,6 +145,15 @@ class RefStore:
         else:
             raise LookupError(_ERROR_NOT_TRACKED)
 
+    # option to hard remove ref (skips check if actual file)
+    def remove_ref_raw(self, ref_name):
+        self.check_valid()
+        if ref_name in self.index:
+            self.index.remove(ref_name)
+            self.commit()
+        else:
+            raise LookupError(_ERROR_NOT_TRACKED)
+
     def contains_ref(self, pathspec):
         assert type(pathspec) is Pathspec, _ERROR_NOT_PATHSPEC
         self.check_valid()
@@ -154,6 +163,7 @@ class RefStore:
             if ref == name:
                 exists = True
                 break
+        log.debug("Contains ref: {0} -> {1}".format(pathspec, exists))
         return exists
 
     def get_index(self):

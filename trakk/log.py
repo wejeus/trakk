@@ -1,6 +1,6 @@
 # author: Samuel Wejeus (samuel@isalldigital.com)
 
-__DEBUG = True
+__DEBUG = False
 
 def debug(message):
     if __DEBUG:
