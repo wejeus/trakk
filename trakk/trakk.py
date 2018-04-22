@@ -116,10 +116,6 @@ parser.add_argument('--show',
 					type=str, dest='show', nargs='+', metavar="<pathspec>",
 					help='Show diff for file')
 
-parser.add_argument('--restore',
-					type=str, dest='remove', nargs='+', metavar="<pathspec>",
-					help='Restore file from repository to system. This will overwrite any existing file')
-
 
 if len(sys.argv)==1:
 	try:

@@ -7,7 +7,7 @@ import config
 import log
 import link
 
-AVAILABLE_ACTIONS = ["list", "status", "sync", "add", "remove", "restore", "show"]
+AVAILABLE_ACTIONS = ["list", "status", "sync", "add", "remove", "show"]
 
 class App:
     def __init__(self, ref_storage, linker, git_repo):
@@ -291,36 +291,4 @@ class App:
             print("What?")
             return self.sync_choose_which(mine, theirs)
 
-    # NOTE: restore always goes from REPO to SYSTEM (by force)
-    def restore(self, params):
-        # for each pathspec, check if exist in Storage else abort (needs ADD)
-        # for each pathspec, check if points to same inode if not abort (needs SYNC)
-        # check for changes in git if no diff abort (no change detected)
-        # restore system file by copying from git repo to system location
-        # re:sync path
-        paths = params
-        pathspecs = []
-        for ps in paths:
-            try:
-                pathspecs.append(Pathspec(ps))
-            except Exception as e:
-                print(e)
-                sys.exit(1)
-
-        for ps in pathspecs:
-            system_abs_path = ps.get_abs_path()
-            track_ref_path = ps.get_user_rel_ref()
-            track_abs_path = os.path.join(self.storage.get_repository(), track_ref_path)
-            if not self.storage.contains_ref(ps.get_user_rel_ref()):
-                print("File not tracked (use --add <pathspec> to start tracking): {0}".format(ps.get_abs_path()))
-                sys.exit(1)
-            # inode mismatch, restore by linking in opposite direction
-            if not os.path.samefile(system_abs_path, track_abs_path):
-                os.remove(system_abs_path)
-                os.link(track_abs_path, system_abs_path)
-                continue
-            if self.git_repo.index.checkout(paths=track_abs_path, force=True):
-                os.remove(system_abs_path)
-                os.link(track_abs_path, system_abs_path)
-                continue
 
