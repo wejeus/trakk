@@ -17,11 +17,14 @@ class Linker:
     def __init__(self, repository):
         self.repo = repository
 
-    def link_raw(self, src, dest):
+    # src, dest must be absolute paths
+    def link_raw(self, src, dest, forced=False):
         assert src.startswith(os.path.expanduser("~")), _ERROR_INVALID_USER_ABS_PATH
         assert dest.startswith(os.path.expanduser("~")), _ERROR_INVALID_USER_ABS_PATH
         # handle missing parent dirs
         self.make_dirs_if_needed(dest)
+        if forced:
+            os.remove(dest)
         os.link(src, dest)
 
     # a link requires src and destination but since we link an existing 

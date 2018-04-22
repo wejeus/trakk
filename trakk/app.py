@@ -66,20 +66,31 @@ class App:
 
     def get_broken_refs(self):
         broken_refs = []
+        git_diff_refs = [item.a_path for item in self.git_repo.index.diff(None)] + [item.a_path for item in self.git_repo.index.diff("HEAD")]
         # Handle cases tracked by INDEX
         for ref_name in self.storage.get_index():
             status = self.determine_link_status(ref_name)
+            if ref_name in git_diff_refs:
+                git_diff_refs.remove(ref_name)
             if status:
                 broken_refs.append(status)
 
-        repo = self.storage.get_repository()
         # Handle dangling files NOT tracked by index
+        repo = self.storage.get_repository()
         for root, dirs, files in os.walk(repo):
             for file in files:
                 ref_name = os.path.join(root, file).split(repo + "/")[1]
                 status = self.determine_track_status(ref_name)
                 if status:
                     broken_refs.append(status)
+
+        # Handle git specific case where file is intentionally unknown to trakk (dangling git index)
+        # i.e. file not index and not in repository but known to git (either staged or not)
+        # Example file staged for deletion in git but not commited as a result of a --remove operation
+        for ref_name in git_diff_refs:
+            mine, theirs = self.mine_theirs_from_ref(ref_name)
+            broken_refs.append(link.BrokenRefType.A(mine, theirs))
+
         return broken_refs
 
     def status(self, params=None):
@@ -87,7 +98,7 @@ class App:
         broken_refs = self.get_broken_refs()
         if len(broken_refs) > 0:
             # broken_refs.sort(key=lambda tup: tup[1]) throws "instance has no attribute '__getitem__'" since no longer tuple
-            log.info("Found broken or inconsistent refs")
+            log.info("\nFound broken or inconsistent refs:")
             sorted_refs = sorted(broken_refs, key=lambda ref: ref.type) 
             printed_headlines = []
             for broken_ref in sorted_refs:
@@ -98,7 +109,7 @@ class App:
                 if broken_ref.type == "A":
                     log.info(broken_ref.mine)
                 elif broken_ref.type == "B":
-                    log.info("mine: {1} -> theirs: {2}".format(broken_ref.mine, broken_ref.theirs))
+                    log.info("mine: {0} -> theirs: {1}".format(broken_ref.mine, broken_ref.theirs))
                 elif broken_ref.type == "C":
                     log.info(broken_ref.mine)
                 elif broken_ref.type == "D":
@@ -112,6 +123,11 @@ class App:
             log.info("All OK")
         return False
 
+    def mine_theirs_from_ref(self, ref):
+        mine = os.path.join(os.path.expanduser("~"), ref) # R
+        theirs = os.path.join(self.storage.get_repository(), ref) # L
+        return mine, theirs
+
     # determines tracked status of a path like name. That is a ref relative <repository>
     def determine_track_status(self, ref_name):
         if ref_name.startswith('.git/'):
@@ -124,8 +140,7 @@ class App:
         return None
 
     def determine_link_status(self, ref):
-        mine = os.path.join(os.path.expanduser("~"), ref)
-        theirs = os.path.join(self.storage.get_repository(), ref)
+        mine, theirs = self.mine_theirs_from_ref(ref)
 
         # Case C, E
         if not os.path.exists(theirs):
@@ -142,7 +157,7 @@ class App:
             else:
                 if os.path.samefile(mine, theirs):
                     # theirs, mine points to same inode, link is OK but could still diff from what is in git db
-                    if self.git_repo.head.commit.diff(None, paths=ref):
+                    if ref in self.git_repo.untracked_files or self.git_repo.head.commit.diff(None, paths=ref):
                         return link.BrokenRefType.A(mine, theirs)
                 else:
                     return link.BrokenRefType.B(mine, theirs)
@@ -267,10 +282,10 @@ class App:
         if choice == "s":
             return False
         if choice == "m":
-            self.linker.link(mine, theirs)
+            self.linker.link_raw(mine, theirs, True)
             return True
         if choice == "t":
-            self.linker.link(theirs, mine)
+            self.linker.link_raw(theirs, mine, True)
             return True
         else:
             print("What?")
