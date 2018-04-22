@@ -25,7 +25,7 @@ def init(path):
 			if not ref_store:
 				return
 			assert git.Repo.init(os.path.abspath(path)).__class__ is git.Repo
-			log.info("Initialized empty {0} repository in {1}".format(config.APP, ref_store.get_repository()))	
+			log.info("Initialized {0} repository in {1}".format(config.APP, ref_store.get_repository()))	
 		except BaseException as e:
 			print(e)
 			sys.exit(1)

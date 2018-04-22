@@ -22,7 +22,7 @@ from pathspec import Pathspec
 _JSON_KEY_REPOSITORY = 'repository'
 _JSON_KEY_REFS = 'refs'
 
-_ERROR_INVALID_REPOSITORY_PATH = "Repository path must exist and be a sub folder to users home directory"
+_ERROR_INVALID_REPOSITORY_PATH = "Invalid repository! Repository path must exist and be a sub folder to users home directory"
 _ERROR_NOT_INITIALIZED = "Trakk not yet initialized!"
 _ERROR_NOT_TRACKED = "File not tracked"
 _ERROR_ALREADY_TRACKED = "File already tracked"
