@@ -3,7 +3,7 @@ import os
 import log
 from pathspec import Pathspec
 # from types import type
-
+import types
 # Links must be hard links in order to harness the power of inodes!
 
 # TODO handle linking of existing files! (for sync)
@@ -45,7 +45,7 @@ class Linker:
     def unlink(self, dest):
         assert type(dest) is Pathspec, _ERROR_NOT_PATHSPEC
         log.debug("Unlinking: {0}".format(dest.get_abs_path()))
-        name = Pathspec.parse_ref_name(self.repo, dest)
+        name = Pathspec.get_ref_from_repo(self.repo, dest)
         path = os.path.join(self.repo, name)
         wasUnlinked = True
         try:
@@ -60,41 +60,3 @@ class Linker:
         dir_path = os.path.dirname(path)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
-
-
-# <mine> is what is located in your local fs, <theirs> refers to something located in <repository>
-class BrokenRefType:
-
-    # TODO: migrate ref (and maybe mine/theirs) to pathspecs
-    def __init__(self, named_type, reason, mine, theirs):
-        self.type = named_type
-        self.reason = reason
-        self.mine = mine
-        self.theirs = theirs
-
-    def __repr__(self):
-        return "BrokenRef: type {0} mine {1} theirs {2}".format(self.type, self.mine, self.theirs)
-
-    @staticmethod
-    def A(mine, theirs):
-        return BrokenRefType("A", "Has changes not committed to version control", mine, theirs)
-
-    @staticmethod
-    def B(mine, theirs):
-        return BrokenRefType("B", "Inode mismatch for ref", mine, theirs)
-
-    @staticmethod
-    def C(mine, theirs):
-        return BrokenRefType("C", "Ref does not exist in repository but is present in system", mine, theirs)
-
-    @staticmethod
-    def D(mine, theirs):
-        return BrokenRefType("D", "New incoming (non existing in system) upstream ref", mine, theirs)
-
-    @staticmethod
-    def E(mine, theirs):
-        return BrokenRefType("E", "Ref does not exist in either repository OR system", mine, theirs)
-
-    @staticmethod
-    def F(theirs):
-        return BrokenRefType("F", "Untracked file", None, theirs)

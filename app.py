@@ -1,17 +1,22 @@
 # author: Samuel Wejeus (samuel@isalldigital.com)
-
 import sys
-from pathspec import Pathspec
+import filecmp
+import git
 import os
-import config
+
+from pathspec import Pathspec
+from broken_ref_type import BrokenRefType
+from ref_store import RefStore
+from linker import Linker
+from config import Config, APP
 import log
-import link
 
 AVAILABLE_ACTIONS = ["list", "status", "sync", "add", "remove", "show"]
 
+# Everything must be initialized (with a config rc file and all before we can use anything in App)
 class App:
-    def __init__(self, ref_storage, linker, git_repo):
-        self.storage = ref_storage
+    def __init__(self, config: Config, ref_store: RefStore, linker: Linker, git_repo: git.Repo):
+        self.ref_store = ref_store
         self.linker = linker
         self.git_repo = git_repo
 
@@ -30,16 +35,16 @@ class App:
                 return
 
         for ps in resolved:
-            if self.storage.contains_ref(ps): # and os.path.isfile(ps.get_abs_path()):
+            if self.ref_store.contains_ref(ps): # and os.path.isfile(ps.get_abs_path()):
                 log.info("File already tracked: {0}".format(ps))
                 continue
-            self.storage.add_ref(ps)  # best to save ref first if something goes wrong later
+            self.ref_store.add_ref(ps)  # best to save ref first if something goes wrong later
             self.linker.link(ps)
 
     # can be used to either remove a ref pointed to by path in repo dir
     # or by pointing to original source file. Either way refs are remove
     # and (maybe) unlinked if needed.
-    def remove(self, pathspecs):
+    def remove(self, pathspecs: Pathspec):
         resolved = []
         for ps in pathspecs:
             try:
@@ -50,14 +55,14 @@ class App:
         for ps in resolved:
             log.debug("Removing ref: {0}".format(ps))
             try:
-                self.storage.remove_ref(ps)
+                self.ref_store.remove_ref(ps)
             except Exception as e:
                 pass
             self.linker.unlink(ps)
 
     def list(self, params=None):
         log.info("Tracking files:")
-        refs = self.storage.get_index()
+        refs = self.ref_store.get_index()
         if not refs:
             log.info("None")
             return
@@ -68,7 +73,7 @@ class App:
         broken_refs = []
         git_diff_refs = [item.a_path for item in self.git_repo.index.diff(None)] + [item.a_path for item in self.git_repo.index.diff("HEAD")]
         # Handle cases tracked by INDEX
-        for ref_name in self.storage.get_index():
+        for ref_name in self.ref_store.get_index():
             status = self.determine_link_status(ref_name)
             if ref_name in git_diff_refs:
                 git_diff_refs.remove(ref_name)
@@ -76,8 +81,8 @@ class App:
                 broken_refs.append(status)
 
         # Handle dangling files NOT tracked by index
-        repo = self.storage.get_repository()
-        for root, dirs, files in os.walk(repo):
+        repo = self.ref_store.get_repository()
+        for root, _, files in os.walk(repo):
             for file in files:
                 ref_name = os.path.join(root, file).split(repo + "/")[1]
                 status = self.determine_track_status(ref_name)
@@ -89,12 +94,12 @@ class App:
         # Example file staged for deletion in git but not commited as a result of a --remove operation
         for ref_name in git_diff_refs:
             mine, theirs = self.mine_theirs_from_ref(ref_name)
-            broken_refs.append(link.BrokenRefType.A(mine, theirs))
+            broken_refs.append(BrokenRefType.A(mine, theirs))
 
         return broken_refs
 
     def status(self, params=None):
-        log.info("{0} repository: {1}".format(config.APP, self.storage.get_repository()))
+        log.info("{0} repository: {1}".format(APP, self.ref_store.get_repository()))
         broken_refs = self.get_broken_refs()
         if len(broken_refs) > 0:
             # broken_refs.sort(key=lambda tup: tup[1]) throws "instance has no attribute '__getitem__'" since no longer tuple
@@ -123,9 +128,10 @@ class App:
             log.info("All OK")
         return False
 
+    # ref param could be either local or from repo. must handle both cases and separate correctly into mine/theirs
     def mine_theirs_from_ref(self, ref):
         mine = os.path.join(os.path.expanduser("~"), ref) # R
-        theirs = os.path.join(self.storage.get_repository(), ref) # L
+        theirs = os.path.join(self.ref_store.get_repository(), ref) # L
         return mine, theirs
 
     # determines tracked status of a path like name. That is a ref relative <repository>
@@ -133,10 +139,10 @@ class App:
         if ref_name.startswith('.git/'):
             return None
         log.debug("determine track status for: {0}".format(ref_name))
-        repo = self.storage.get_repository()
+        repo = self.ref_store.get_repository()
         theirs_ps = Pathspec(os.path.join(repo, ref_name))
-        if not self.storage.contains_ref(theirs_ps):
-            return link.BrokenRefType.F(theirs_ps.get_abs_path())
+        if not self.ref_store.contains_ref(theirs_ps):
+            return BrokenRefType.F(theirs_ps.get_abs_path())
         return None
 
     def determine_link_status(self, ref):
@@ -145,22 +151,22 @@ class App:
         # Case C, E
         if not os.path.exists(theirs):
             if os.path.exists(mine):
-                return link.BrokenRefType.C(mine, theirs)
+                return BrokenRefType.C(mine, theirs)
             else:
-                return link.BrokenRefType.E(mine, theirs)
+                return BrokenRefType.E(mine, theirs)
         # Case A, B, D (theirs do exist)
         else:
             # Case D
             if not os.path.exists(mine):
-                return link.BrokenRefType.D(mine, theirs)
+                return BrokenRefType.D(mine, theirs)
             # Case A, B (mine do exist)
             else:
                 if os.path.samefile(mine, theirs):
                     # theirs, mine points to same inode, link is OK but could still diff from what is in git db
                     if ref in self.git_repo.untracked_files or self.git_repo.head.commit.diff(None, paths=ref):
-                        return link.BrokenRefType.A(mine, theirs)
+                        return BrokenRefType.A(mine, theirs)
                 else:
-                    return link.BrokenRefType.B(mine, theirs)
+                    return BrokenRefType.B(mine, theirs)
         return None
 
     # diff for cases A, B
@@ -169,8 +175,7 @@ class App:
             log.error("can only handle one ref at a time")
             sys.exit(1)
 
-        ref = Pathspec.parse_ref_name(self.storage.get_repository(), Pathspec(params[0]))
-        ref = os.path.join(self.storage.get_repository(), ref)
+        ref = Pathspec.get_ref_from_repo(self.ref_store.get_repository(), Pathspec(params[0]))
 
         log.debug("determine show for: " + ref)
         status = self.determine_track_status(ref)
@@ -226,16 +231,21 @@ class App:
 
         for broken_ref in refs:
             if broken_ref.type == "B":
-                self.sync_choose_which(broken_ref.mine, broken_ref.theirs)
+                # even though inode could be different for 2 files content could be same.
+                # We can then auto merge and it does not matter if we use mine or theirs as base
+                if filecmp.cmp(broken_ref.mine, broken_ref.theirs):
+                    self.linker.link_raw(broken_ref.mine, broken_ref.theirs, True)
+                else:
+                    self.prompt_choose_ref_to_link(broken_ref.mine, broken_ref.theirs)
             elif broken_ref.type == "C":
-                self.sync_add(broken_ref.mine)
+                self.prompt_add_ref_to_index(broken_ref.mine)
             elif broken_ref.type == "D":
                 self.linker.link_raw(broken_ref.theirs, broken_ref.mine)
             elif broken_ref.type == "E":
-                self.sync_remove_from_index(broken_ref.mine)
+                self.prompt_remove_ref_from_index(broken_ref.mine)
             elif broken_ref.type == "F":
                 ps = Pathspec(broken_ref.theirs)
-                self.storage.add_ref(ps)
+                self.ref_store.add_ref(ps)
             elif broken_ref.type == "A":
                 # do this last since we only want to commit data when in a clean state
                 continue
@@ -244,24 +254,24 @@ class App:
             # continue rotation of fixing this perticular ref if more actions are needed
             # self.sync_internal([self.determine_link_status(broken_ref.ref)])
 
-    def sync_remove_from_index(self, mine):
+    # MARK: - prompt user for input
+    
+    def prompt_remove_ref_from_index(self, mine):
         ref_name = mine[len(os.path.expanduser("~")):]
         if ref_name.startswith("/"):
             ref_name = ref_name[1:]
-        log.info("Ref '{0}' is only present as a name in index (file does not exist in either system or repository). Should I remove it from the index? (Y)es/(N)o/(S)kip: ".format(ref_name))
+        log.info("Ref '{0}' is only present as a name in index (file does not exist in either system or repository). Should I remove it from the index? (Y)es/(S)kip: ".format(ref_name))
         choice = sys.stdin.readline().rstrip().lower()
         if choice == "s":
             return False
         if choice == "y":
-            self.storage.remove_ref_raw(ref_name)
+            self.ref_store.remove_ref(ref_name, forced=True)
             return True
-        if choice == "n":
-            return False
         else:
             print("What?")
-            return self.sync_remove_from_index(mine)
+            return self.prompt_remove_ref_from_index(mine)
 
-    def sync_add(self, mine):
+    def prompt_add_ref_to_index(self, mine):
         log.info("Ref '{0}' exists in system and index but is not linked to repository. Should I add it? (Y)es/(N)o/(S)kip: ".format(mine))
         choice = sys.stdin.readline().rstrip().lower()
         if choice == "s":
@@ -273,22 +283,23 @@ class App:
             return False
         else:
             print("What?")
-            return self.sync_add(mine)
+            return self.prompt_add_ref_to_index(mine)
 
-    def sync_choose_which(self, mine, theirs):
+    def prompt_choose_ref_to_link(self, mine, theirs):
         ref = mine
         log.info("Unresolvable file conflict for '{0}' (exists both in system and repository). Which should I pick? (M)ine/(T)heirs/(S)kip: ".format(ref))
         choice = sys.stdin.readline().rstrip().lower()
         if choice == "s":
             return False
         if choice == "m":
-            self.linker.link_raw(mine, theirs, True)
+            self.linker.link_raw(mine, theirs)
             return True
         if choice == "t":
             self.linker.link_raw(theirs, mine, True)
             return True
         else:
             print("What?")
-            return self.sync_choose_which(mine, theirs)
+            return self.prompt_choose_ref_to_link(mine, theirs)
+
 
 

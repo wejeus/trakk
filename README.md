@@ -13,7 +13,7 @@ Backup utility that lets you keep a mirror of important files that are always in
 
 * brew install python3
 * pip3 install --user pipenv
-* pip3 install --user gitpython (old way: Needs GitPython: sudo easy_install gitpython)
+* pip3 install --user pytest gitpython injector rope
 
 This will install python3 and pip3 in **/usr/local/bin** - make sure to update your PATH to include those. I have experienced issues with pip3 not being installed correctly sometimes, try to clean and chmod **/usr/local** with right permissions: 
 	
@@ -50,10 +50,10 @@ Print list of tracked files
 Show any inconsistencies between original system files and mirror files and folders
 
 ### trakk --sync
-Synchronize potentially broken links and/or missing files or files detected in track dir but is added as watched files (missing in config)
+Synchronize potentially broken links and/or missing files or files detected in track dir but is added as watched files (missing in config). Automatically solves several merges issues.
 
 ### trakk --add
-Stage pathspec(s) to be included in tracking
+Stage files to be included in tracking
 
 ### trakk --remove
-Remove pathspec(s) from being tracked
+Remove file from being tracked
