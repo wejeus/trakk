@@ -99,11 +99,10 @@ class App:
         return broken_refs
 
     def status(self, params=None):
-        log.info("{0} repository: {1}".format(APP, self.ref_store.get_repository()))
         broken_refs = self.get_broken_refs()
         if len(broken_refs) > 0:
             # broken_refs.sort(key=lambda tup: tup[1]) throws "instance has no attribute '__getitem__'" since no longer tuple
-            log.info("\nFound broken or inconsistent refs:")
+            log.info("{0} - Found broken or inconsistent refs:".format(APP))
             sorted_refs = sorted(broken_refs, key=lambda ref: ref.type) 
             printed_headlines = []
             for broken_ref in sorted_refs:
@@ -125,7 +124,7 @@ class App:
                     log.info(broken_ref.theirs)
             return True
         else:
-            log.info("All OK")
+            log.info("{0} - All OK".format(APP))
         return False
 
     # ref param could be either local or from repo. must handle both cases and separate correctly into mine/theirs

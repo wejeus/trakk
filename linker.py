@@ -34,8 +34,8 @@ class Linker:
         assert type(pathspec) is Pathspec, _ERROR_NOT_PATHSPEC
         log.info("creating link: {0}".format(pathspec))
         # handle missing parent dirs
-        self.make_dirs_if_needed(os.path.join(self.repo, pathspec.get_user_rel_ref()))
-        path_in_repo = os.path.join(self.repo, pathspec.get_user_rel_ref())
+        self.make_dirs_if_needed(os.path.join(self.repo, pathspec.get_ref()))
+        path_in_repo = os.path.join(self.repo, pathspec.get_ref())
         os.link(pathspec.get_abs_path(), path_in_repo)
 
     # unlinking is a basic removal of file. This will handle 2 cases:
