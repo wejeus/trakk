@@ -24,27 +24,55 @@ class App:
     def move(self, src, dest):
         raise Exception("NOT IMPLEMENTED YET!")
 
+    def add_recursive(self, path, resolved) -> bool:
+        ps = None
+        try:
+            ps = Pathspec(path)
+        except Exception as e:
+            log.error(e)
+            return False
+
+        if ps.is_dir_ref():
+            entries = os.listdir(ps.get_abs_path()) # get all files and folder in directory
+            for subpath in entries:
+                print(os.path.join(ps.get_abs_path(), subpath))
+                self.add_recursive(os.path.join(ps.get_abs_path(), subpath), resolved)
+        else:
+            resolved.append(ps)      
+        return True
+            
+
+    # param could be either a path to a file or directory. Only a single param at a time is currently supported.
     def add(self, params):
-        pathspecs = params
-        resolved = []
-        for ps in pathspecs:
-            try:
-                resolved.append(Pathspec(ps))
-            except Exception as e:
-                log.error(e)
-                return
+        if len(params) == 1:
+            param = params[0]
+            resolved = []
+            if self.add_recursive(param, resolved):
+                for ps in resolved:
+                    if self.ref_store.contains_ref(ps): # TODO should also check? os.path.isfile(ps.get_abs_path()):
+                        log.info("File already tracked: {0}".format(ps))
+                        continue
+                    self.ref_store.add_ref(ps)  # best to save ref first if something goes wrong later
+                    self.linker.link(ps)
+                
+                maybeDirPathspec = Pathspec(param)
+                if maybeDirPathspec.is_dir_ref():
+                    self.ref_store.add_dir_ref(maybeDirPathspec)
+            else:
+                log.error("Could not resolve param")
 
-        for ps in resolved:
-            if self.ref_store.contains_ref(ps): # and os.path.isfile(ps.get_abs_path()):
-                log.info("File already tracked: {0}".format(ps))
-                continue
-            self.ref_store.add_ref(ps)  # best to save ref first if something goes wrong later
-            self.linker.link(ps)
+            # if param is dir: add separate entry in ref_store indicating that it is a directory being tracked
+        else:
+            log.error("Can only add a single path (file or directory) at a time!")
 
+        # Edge case: what happens when adding a dir and a file in that dir is already tracked?
+        
     # can be used to either remove a ref pointed to by path in repo dir
     # or by pointing to original source file. Either way refs are remove
     # and (maybe) unlinked if needed.
     def remove(self, pathspecs: Pathspec):
+        log.error("TODO: implement removal of directory")
+
         resolved = []
         for ps in pathspecs:
             try:
@@ -99,6 +127,8 @@ class App:
         return broken_refs
 
     def status(self, params=None):
+        log.error("TODO: implement sync status of folders!")
+
         broken_refs = self.get_broken_refs()
         if len(broken_refs) > 0:
             # broken_refs.sort(key=lambda tup: tup[1]) throws "instance has no attribute '__getitem__'" since no longer tuple

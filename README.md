@@ -35,6 +35,10 @@ Removing a file from trakk results in the following:
 * remove entry from list in ~/.track.config
 * remove hard link from repository dir
 
+It's recommended to add trakk run as part of shell startup. That way you will get a quick overview in a timely manner using status check.
+
+$> trakk --status
+
 Usage
 --------
 

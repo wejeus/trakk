@@ -25,6 +25,7 @@ class Pathspec:
         abspath = os.path.abspath(path)
         if os.path.isdir(abspath):
             abspath = abspath + "/"
+            log.debug("{0} resolved as directory".format(abspath))
         userpath = os.path.expanduser("~")
 
         if not abspath.startswith(userpath):
@@ -36,6 +37,11 @@ class Pathspec:
 
     def __repr__(self) -> str:
         return self.abspath
+
+    def is_dir_ref(self) -> bool:
+        isDir = os.path.isdir(self.abspath)
+        log.debug("{0} is dir? {1}".format(self.abspath, isDir))
+        return isDir
 
     def get_abs_path(self) -> str:
         return self.abspath

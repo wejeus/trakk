@@ -40,7 +40,7 @@ class RefStore:
         self.reload()
 
     def reload(self):
-        self.repo, self.index = self.config.read_rc()
+        self.repo, self.index, self.dirs = self.config.read_rc()
 
     def check_valid(self):
         if not self.repo:
@@ -70,6 +70,19 @@ class RefStore:
             self.commit()
         return True
 
+    def add_dir_ref(self, pathspec: Pathspec) -> bool:
+        assert type(pathspec) is Pathspec, _ERROR_NOT_PATHSPEC
+        self.check_valid()
+        if pathspec.is_dir_ref:
+            name = Pathspec.get_ref_from_repo(self.repo, pathspec)
+            if name in self.dirs:
+                return False
+            else:
+                self.dirs.append(name)
+                self.commit()
+            return True
+        return False
+    
     # assumes path is resolved
     def remove_ref(self, pathspec: Pathspec, forced=False) -> bool:
         assert type(pathspec) is Pathspec, _ERROR_NOT_PATHSPEC
@@ -102,9 +115,14 @@ class RefStore:
         self.check_valid()
         return self.index
 
+    def get_dirs(self):
+        self.check_valid()
+        return self.dirs
+
     def commit(self):
         self.check_valid()
-        self.config.write_rc(self.repo, self.index)
+        log.error("TODO: Sort refs in ref_store.commit() before saving!")
+        self.config.write_rc(self.repo, self.index, self.dirs)
 
     def is_pathspec_in_repo_dir(self, pathspec: Pathspec) -> bool:
         assert type(pathspec) is Pathspec

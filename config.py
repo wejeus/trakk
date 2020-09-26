@@ -9,6 +9,7 @@ _TRAKK_CONFIG_FILENAME = '.trakk.config'
 
 _JSON_KEY_REPOSITORY = 'repository'
 _JSON_KEY_REFS = 'refs' # the index
+_JSON_KEY_DIRS = 'dirs' # the index of tracked dirs
 
 
 # returns a path to existing repository if exists and current index
@@ -38,12 +39,17 @@ class Config:
         else:
             index = []
 
+        if _JSON_KEY_DIRS in data:
+            dirs = data[_JSON_KEY_DIRS]
+        else:
+            dirs = []
+
         log.debug("read repository path: " + repo_path)
-        return repo_path, index
+        return repo_path, index, dirs
 
     # Writes a config file with pointer to repository. Assumes repository path have been verified for correctness
-    def write_rc(self, repo_path: str, index: [str]):
-        data = {_JSON_KEY_REPOSITORY: repo_path, _JSON_KEY_REFS: index}
+    def write_rc(self, repo_path: str, index: [str], dirs: [str]):
+        data = {_JSON_KEY_REPOSITORY: repo_path, _JSON_KEY_REFS: index, _JSON_KEY_DIRS: dirs}
         encoded = json.dumps(data)
         rc = self.get_rc_file()
         log.debug("writing configuration to: " + rc + " with repository path: " + repo_path)

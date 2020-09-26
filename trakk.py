@@ -145,11 +145,11 @@ parser.add_argument('--sync',
 
 parser.add_argument('--add',
 					type=str, dest='add', nargs='+', metavar="<pathspec>",
-					help='Stage pathspec(s) to be included in tracking')
+					help='Stage a file or directory to be included in tracking')
 
 parser.add_argument('--remove',
 					type=str, dest='remove', nargs='+', metavar="<pathspec>",
-					help='Remove pathspec(s) from being tracked')
+					help='Remove file or directory from being tracked')
 
 parser.add_argument('--show',
 					type=str, dest='show', nargs='+', metavar="<pathspec>",
