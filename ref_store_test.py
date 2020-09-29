@@ -13,8 +13,8 @@ LOG = logging.getLogger(__name__)
 @pytest.fixture
 def config(initial_index):
     config = mock(Config)
-    when(config).read_rc().thenReturn(("", initial_index))
-    when(config).write_rc(ANY, ANY)
+    when(config).read_rc().thenReturn(("", initial_index, []))
+    when(config).write_rc(ANY, ANY, ANY)
     yield config
     unstub()
 
@@ -29,7 +29,7 @@ def test_addRef_singleRef_addsSingleRef(config):
 
     assert added == True
     assert ref_store.get_index() == ["somefile"]
-    verify(config).write_rc("", ["somefile"])
+    verify(config).write_rc("", ["somefile"], [])
 
 @pytest.mark.parametrize('initial_index', [[]])
 def test_addRef_multipleRefs_addsAllRefs(config):
@@ -41,7 +41,7 @@ def test_addRef_multipleRefs_addsAllRefs(config):
 
     assert added == True
     assert ref_store.get_index() == ["somefile1", "somefile2"]
-    verify(config, times=2).write_rc(ANY, ANY)
+    verify(config, times=2).write_rc(ANY, ANY, [])
 
 @pytest.mark.parametrize('initial_index', [["somefile"]])
 def test_addRef_refAlreadyExists_doNothing(config):
@@ -52,7 +52,7 @@ def test_addRef_refAlreadyExists_doNothing(config):
 
     assert added == False
     assert ref_store.get_index() == ["somefile"]
-    verify(config, times=0).write_rc(ANY, ANY)
+    verify(config, times=0).write_rc(ANY, ANY, [])
 
 @pytest.mark.parametrize('initial_index', [[]])
 def test_addRef_paramNotPathspec_throwException(config):
@@ -72,7 +72,7 @@ def test_removeRef_removeSingleExisting_emptyIndex(config):
 
     assert deleted == True
     assert ref_store.get_index() == []
-    verify(config).write_rc("", [])
+    verify(config).write_rc("", [], [])
 
 @pytest.mark.parametrize('initial_index', [["somefile1", "somefile2"]])
 def test_removeRef_removeSingleExistingWhenMultipleExists_leaveRemainingUnchanged(config):
@@ -83,7 +83,7 @@ def test_removeRef_removeSingleExistingWhenMultipleExists_leaveRemainingUnchange
 
     assert deleted == True
     assert ref_store.get_index() == ["somefile2"]
-    verify(config).write_rc(ANY, ANY)
+    verify(config).write_rc(ANY, ANY, [])
 
 @pytest.mark.parametrize('initial_index', [["somefile"]])
 def test_removeRef_refNotTracked_doNothing(config):
@@ -94,7 +94,7 @@ def test_removeRef_refNotTracked_doNothing(config):
 
     assert deleted == False
     assert ref_store.get_index() == ["somefile"]
-    verify(config, times=0).write_rc(ANY, ANY)
+    verify(config, times=0).write_rc(ANY, ANY, [])
 
 @pytest.mark.parametrize('initial_index', [[]])
 def test_removeRef_paramNotPathspec_throwException(config):

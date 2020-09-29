@@ -23,7 +23,7 @@ class Config:
         rc = self.get_rc_file()
         log.debug("reading configuration from: " + rc)
         if not os.path.isfile(rc):
-            return None, []
+            return None, [], []
 
         data = None
         with open(rc, 'r') as f:

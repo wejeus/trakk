@@ -61,3 +61,11 @@ Stage files to be included in tracking
 
 ### trakk --remove
 Remove file from being tracked
+
+# For Development
+
+Setup and run tests in virtual environment:
+
+* pip3 install --user pytest
+* (to activate env) $> source virtualenv/bin/activate
+* (run a test) $> pytest -o log_cli=true app_test.py (or dont specify a specific file to run all tests)
