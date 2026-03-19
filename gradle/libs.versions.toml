@@ -1,0 +1,30 @@
+[versions]
+
+kotlin = "2.3.10" # https://github.com/JetBrains/kotlin/releases
+kotlinxSerialization = "1.10.0"
+kotlin-stdlib = "2.3.10"
+okio = "3.17.0"
+clikt = "5.1.0" # https://ajalt.github.io/clikt/
+multiplatform-diff = "1.3.0"
+
+[libraries]
+
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" } # Format specifics includes "kotlinx-serialization-core"
+kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin-stdlib" }
+square-okio = { group = "com.squareup.okio", name = "okio", version.ref = "okio" }
+clikt = { group = "com.github.ajalt.clikt", name = "clikt", version.ref = "clikt" }
+multiplatform-diff = { group = "io.github.petertrr", name = "kotlin-multiplatform-diff", version.ref = "multiplatform-diff" }
+
+# Note: no ref means version is inherited from "kotlin" version
+# https://kotlinlang.org/api/core/kotlin-test/
+# https://kotlinlang.org/docs/multiplatform/multiplatform-run-tests.html
+test-kotlin = { module = "org.jetbrains.kotlin:kotlin-test" }
+test-kotlin-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5" }
+test-square-okio-fakefilesystem = { group = "com.squareup.okio", name = "okio-fakefilesystem", version.ref = "okio" }
+
+[plugins]
+
+# Kotlin Serialization: https://github.com/Kotlin/kotlinx.serialization
+# Plugin follows Kotlin compiler version. The runtime (json, protobuf etc) library has different coordinates, repository and versioning.
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
